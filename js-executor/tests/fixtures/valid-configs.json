@@ -1,0 +1,62 @@
+{
+  "barChart": {
+    "title": {
+      "text": "Sample Bar Chart",
+      "left": "center"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Sales",
+        "type": "bar",
+        "data": [120, 200, 150, 80, 70, 110, 130]
+      }
+    ]
+  },
+  "lineChart": {
+    "title": {
+      "text": "Sample Line Chart",
+      "left": "center"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Temperature",
+        "type": "line",
+        "data": [22, 24, 19, 23, 25, 21, 20]
+      }
+    ]
+  },
+  "pieChart": {
+    "title": {
+      "text": "Sample Pie Chart",
+      "left": "center"
+    },
+    "series": [
+      {
+        "name": "Traffic Sources",
+        "type": "pie",
+        "radius": "50%",
+        "data": [
+          {"value": 1048, "name": "Direct"},
+          {"value": 735, "name": "Email"},
+          {"value": 580, "name": "Organic Search"},
+          {"value": 484, "name": "Referral"},
+          {"value": 300, "name": "Social"}
+        ]
+      }
+    ]
+  }
+}

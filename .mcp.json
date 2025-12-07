@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "llms-docs": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "mcpdoc",
+        "mcpdoc",
+        "--urls",
+        "dify:https://docs.dify.ai/llms.txt",
+        "--transport",
+        "stdio"
+      ]
+    }
+  }
+}

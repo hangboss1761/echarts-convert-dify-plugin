@@ -1,0 +1,35 @@
+{
+  "emptyConfig": {},
+  "nullConfig": null,
+  "invalidJson": "{\"title\": {\"text\": \"Invalid\", \"unclosed\": \"quote}",
+  "missingSeries": {
+    "title": {
+      "text": "No Series Chart"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["A", "B", "C"]
+    },
+    "yAxis": {
+      "type": "value"
+    }
+  },
+  "invalidSeriesType": {
+    "title": {
+      "text": "Invalid Type Chart"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["A", "B", "C"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "type": "invalid_type",
+        "data": [1, 2, 3]
+      }
+    ]
+  }
+}

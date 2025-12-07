@@ -1,0 +1,124 @@
+{
+  "multiSeriesChart": {
+    "title": {
+      "text": "Multi-Series Chart",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "legend": {
+      "data": ["Sales", "Profit", "Expenses"],
+      "top": "10%"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Sales",
+        "type": "bar",
+        "data": [120, 200, 150, 80, 70, 110]
+      },
+      {
+        "name": "Profit",
+        "type": "line",
+        "data": [20, 40, 30, 15, 10, 25]
+      },
+      {
+        "name": "Expenses",
+        "type": "bar",
+        "data": [100, 160, 120, 65, 60, 85]
+      }
+    ]
+  },
+  "largeDatasetChart": {
+    "title": {
+      "text": "Large Dataset Chart",
+      "left": "center"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7", "Item 8", "Item 9", "Item 10"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Values",
+        "type": "line",
+        "data": [23, 45, 56, 78, 32, 67, 89, 12, 34, 56]
+      }
+    ]
+  },
+  "customStyleChart": {
+    "title": {
+      "text": "Custom Styled Chart",
+      "textStyle": {
+        "color": "#333",
+        "fontSize": 18,
+        "fontWeight": "bold"
+      },
+      "left": "center"
+    },
+    "backgroundColor": "#f5f5f5",
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "3%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["Q1", "Q2", "Q3", "Q4"],
+      "axisLine": {
+        "lineStyle": {
+          "color": "#666"
+        }
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "axisLine": {
+        "lineStyle": {
+          "color": "#666"
+        }
+      },
+      "splitLine": {
+        "lineStyle": {
+          "color": "#ddd"
+        }
+      }
+    },
+    "series": [
+      {
+        "name": "Revenue",
+        "type": "bar",
+        "data": [820, 932, 901, 934],
+        "itemStyle": {
+          "color": {
+            "type": "linear",
+            "x": 0,
+            "y": 0,
+            "x2": 0,
+            "y2": 1,
+            "colorStops": [
+              {"offset": 0, "color": "#83bff6"},
+              {"offset": 1, "color": "#188df0"}
+            ]
+          }
+        },
+        "emphasis": {
+          "itemStyle": {
+            "color": "#188df0"
+          }
+        }
+      }
+    ]
+  }
+}

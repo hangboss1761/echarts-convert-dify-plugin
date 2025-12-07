@@ -1,0 +1,40 @@
+version: 0.0.1
+type: plugin
+author: hangboss1761
+name: echarts_convert
+label:
+  en_US: ECharts to Image
+  zh_Hans: ECharts 转图片
+  pt_BR: ECharts para Imagem
+  ja_JP: ECharts 画像変換
+description:
+  en_US: Convert ECharts configurations in text to images
+  zh_Hans: 将文本中的 ECharts 配置转换为图片
+  pt_BR: Converter configurações ECharts em texto para imagens
+  ja_JP: テキスト内のECharts設定を画像に変換
+icon: icon.svg
+icon_dark: icon-dark.svg
+resource:
+  memory: 268435456
+  permission:
+    tool:
+      enabled: true
+    storage:
+      enabled: true
+      size: 10485760
+plugins:
+  tools:
+    - provider/echarts-convert.yaml
+meta:
+  version: 0.0.1
+  arch:
+    - amd64
+    - arm64
+  runner:
+    language: python
+    version: "3.12"
+    entrypoint: main
+  minimum_dify_version: null
+created_at: 2025-12-06T19:39:25.51545+08:00
+privacy: PRIVACY.md
+verified: false

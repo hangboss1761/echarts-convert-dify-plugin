@@ -1,0 +1,28 @@
+{
+  "name": "js-executor",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run index.ts",
+    "test": "bun type-check && bun test",
+    "test:coverage": "bun test --coverage",
+    "test:watch": "bun test --watch",
+    "type-check": "tsc --noEmit",
+    "build:dev": "bun build ./index.ts --compile --outfile ../bin/echarts-convert-local",
+    "build:dev-win": "bun build ./index.ts --compile --target=bun-windows-x64 --outfile ../bin/echarts-convert-local.exe",
+    "build:prod:x64": "bun build ./index.ts --compile --target=bun-linux-x64 --outfile ../bin/echarts-convert-linux-x64",
+    "build:prod:arm64": "bun build ./index.ts --compile --target=bun-linux-arm64 --outfile ../bin/echarts-convert-linux-arm64"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/lodash.merge": "^4.6.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "echarts": "^5.5.1",
+    "lodash.merge": "^4.6.2"
+  }
+}

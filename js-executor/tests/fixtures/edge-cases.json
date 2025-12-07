@@ -1,0 +1,49 @@
+{
+  "emptyConfig": {},
+  "noDataConfig": {
+    "title": {
+      "text": "Chart with No Data"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": []
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Empty Data",
+        "type": "line",
+        "data": []
+      }
+    ]
+  },
+  "nullDataConfig": {
+    "title": {
+      "text": "Chart with Null Data"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": ["A", "B", "C", "D"]
+    },
+    "yAxis": {
+      "type": "value"
+    },
+    "series": [
+      {
+        "name": "Null Data",
+        "type": "line",
+        "data": [null, null, null, null]
+      }
+    ]
+  },
+  "minimalConfig": {
+    "series": [
+      {
+        "type": "line",
+        "data": [1, 2, 3, 4]
+      }
+    ]
+  }
+}

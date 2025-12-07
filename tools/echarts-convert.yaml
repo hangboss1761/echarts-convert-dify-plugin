@@ -1,0 +1,123 @@
+identity:
+  name: "echarts-convert"
+  author: "hangboss1761"
+  label:
+    en_US: "ECharts to Image"
+    zh_Hans: "ECharts 转图片"
+    pt_BR: "ECharts para Imagem"
+    ja_JP: "ECharts 画像変換"
+description:
+  human:
+    en_US: "Convert ECharts configurations in text to images"
+    zh_Hans: "将文本中的 ECharts 配置转换为图片"
+    pt_BR: "Converter configurações ECharts em texto para imagens"
+    ja_JP: "テキスト内のECharts設定を画像に変換"
+  llm: "Extract ```echarts``` code blocks from text and convert them to images. Returns image files and markdown text with embedded images."
+parameters:
+  - name: content
+    type: string
+    required: true
+    label:
+      en_US: Content
+      zh_Hans: 内容
+      pt_BR: Conteúdo
+      ja_JP: コンテンツ
+    human_description:
+      en_US: "Text containing ```echarts``` code blocks"
+      zh_Hans: "包含 ```echarts``` 代码块的文本"
+      pt_BR: "Texto contendo blocos de código ```echarts```"
+      ja_JP: "```echarts``` コードブロックを含むテキスト"
+    llm_description: "Text containing one or more ```echarts``` code blocks with ECharts JSON configuration"
+    form: llm
+
+  - name: image_type
+    type: select
+    required: false
+    default: "svg"
+    options:
+      - value: "svg"
+        label:
+          en_US: "SVG"
+          zh_Hans: "SVG"
+          pt_BR: "SVG"
+          ja_JP: "SVG"
+    label:
+      en_US: Image Type
+      zh_Hans: 图片类型
+      pt_BR: Tipo de Imagem
+      ja_JP: 画像タイプ
+    human_description:
+      en_US: "Output image format (SVG only)"
+      zh_Hans: "输出图片格式（仅支持 SVG）"
+      pt_BR: "Formato de imagem de saída (apenas SVG)"
+      ja_JP: "出力画像形式（SVGのみ）"
+    form: form
+
+
+  - name: width
+    type: number
+    required: false
+    default: 800
+    label:
+      en_US: Width
+      zh_Hans: 宽度
+      pt_BR: Largura
+      ja_JP: 幅
+    human_description:
+      en_US: "Chart width in pixels (100-4000)"
+      zh_Hans: "图表宽度（像素，100-4000）"
+      pt_BR: "Largura do gráfico em pixels (100-4000)"
+      ja_JP: "チャートの幅（ピクセル、100-4000）"
+    form: form
+
+  - name: height
+    type: number
+    required: false
+    default: 600
+    label:
+      en_US: Height
+      zh_Hans: 高度
+      pt_BR: Altura
+      ja_JP: 高さ
+    human_description:
+      en_US: "Chart height in pixels (100-4000)"
+      zh_Hans: "图表高度（像素，100-4000）"
+      pt_BR: "Altura do gráfico em pixels (100-4000)"
+      ja_JP: "チャートの高さ（ピクセル、100-4000）"
+    form: form
+
+  - name: concurrent_rendering
+    type: number
+    required: false
+    default: 1
+    label:
+      en_US: Worker Count
+      zh_Hans: Worker 数量
+      pt_BR: Número de Workers
+      ja_JP: Worker数
+    human_description:
+      en_US: "Number of worker processes for concurrent rendering (1-4). Recommended: 2-4 for complex charts, 1 for simple charts."
+      zh_Hans: "并发渲染的 worker 进程数量（1-4）。推荐：复杂图表使用 2-4，简单图表使用 1。"
+      pt_BR: "Número de processos worker para renderização simultânea (1-4). Recomendado: 2-4 para gráficos complexos, 1 para gráficos simples."
+      ja_JP: "並列レンダリングのワーカープロセス数（1-4）。推奨：複雑なグラフは2-4、単純なグラフは1。"
+    llm_description: "Number of worker processes for concurrent rendering (1-4). Recommended: 1 for simple charts, 2-4 for complex charts. Performance varies based on device specifications and chart complexity."
+    form: form
+
+  - name: mergeEchartsOptions
+    type: string
+    required: false
+    label:
+      en_US: Merge ECharts Options
+      zh_Hans: 合并 ECharts 配置
+      pt_BR: Mesclar Opções ECharts
+      ja_JP: ECharts オプションをマージ
+    human_description:
+      en_US: "Additional ECharts options to merge with chart configurations (JSON format)"
+      zh_Hans: "与图表配置合并的额外 ECharts 选项（JSON 格式）"
+      pt_BR: "Opções ECharts adicionais para mesclar com configurações de gráficos (formato JSON)"
+      ja_JP: "チャート設定とマージする追加のEChartsオプション（JSON形式）"
+    llm_description: "JSON string with ECharts options that will be merged with each chart configuration. These options have higher priority and will override conflicting settings in the original chart configurations."
+    form: form
+extra:
+  python:
+    source: tools/echarts-convert.py
