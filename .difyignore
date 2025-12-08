@@ -7,11 +7,16 @@ __pycache__/
 .mcp.json
 AGENTS.md
 
-# js-executor
+# js-executor (included for runtime builds, but exclude node_modules)
 js-executor/
 
-# Binary executables (too large for plugin package)
-bin/
+# Binary executables (exclude only uncompressed versions)
+executables/echarts-convert-linux-x64
+executables/echarts-convert-linux-arm64
+executables/echarts-convert-linux-local*
+
+# temp
+temp/
 
 # Distribution / packaging
 .Python

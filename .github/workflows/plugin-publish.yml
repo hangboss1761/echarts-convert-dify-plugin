@@ -18,9 +18,8 @@ jobs:
 
       - name: Build binaries
         run: |
-          cd js-executor
           chmod +x build.sh
-          ./build.sh
+          ./build.sh ci
 
       - name: Download CLI tool
         run: |

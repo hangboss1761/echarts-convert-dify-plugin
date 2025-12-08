@@ -85,12 +85,10 @@ export async function renderChartsConcurrent(
   const workerCount = Math.min(options.concurrency, configs.length);
   const chunkSize = Math.ceil(configs.length / workerCount);
 
-  // Split configs into chunks for worker processing
+  // Split configs into chunks for worker processing using round-robin distribution
   const chunks: ChartConfig[][] = Array.from({ length: workerCount }, () => []);
-  let configIndex = 0;
   for (let i = 0; i < configs.length; i++) {
-    chunks[configIndex % workerCount]?.push(configs[i]!);
-    configIndex++;
+    chunks[i % workerCount]?.push(configs[i]!);
   }
 
   // Create workers and assign chunks

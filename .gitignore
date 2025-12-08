@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# difypkg
+*.difypkg
+
 # C extensions
 *.so
 
@@ -178,4 +181,4 @@ cython_debug/
 # Build outputs
 *.log
 test-output*.json
-bin/
+executables/

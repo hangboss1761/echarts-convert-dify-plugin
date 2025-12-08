@@ -9,11 +9,12 @@
 
 ECharts to Image Converter is a powerful Dify plugin that converts ECharts configurations in text to high-quality images. The plugin supports batch processing, concurrent rendering, and flexible output format configuration.
 
+**This plugin runs completely offline with zero external dependencies.**
+
 **Use Case**: Perfect for converting ECharts chart configurations from markdown strings into images, then converting complete markdown strings to docx/pdf formats (use `md_exporter` plugin).
 
 ![usecase](./_assets/image.png)
 
-This plugin runs completely offline with zero external dependencies.
 
 > Echarts version: 5.6.0
 
@@ -32,7 +33,7 @@ The ECharts to Image Converter provides the following configuration options:
 
 - **Worker Count**: Number of worker processes for concurrent rendering (1-4, default: 1)
   - **Recommendation**: Use 2-4 for complex charts, 1 for simple charts
-- **Merge ECharts Options**: Additional ECharts options in JSON format (optional)
+- **Merge ECharts Options**: Additional ECharts options in JSON format (optional), eg: `{"toolbox":{"show":false}}`
 
 ### ⚡ Concurrency Performance Guide
 
@@ -49,6 +50,8 @@ The ECharts to Image Converter provides the following configuration options:
 **Note**: Performance gains vary based on device specifications and chart complexity.
 
 ## Development
+
+For any questions, ask AI assistant for help.
 
 ### Development Setup
 
@@ -67,8 +70,8 @@ bun install
 # Run in development mode
 python -m main
 
-# Run in development mode with local binary, use pnpm build:dev to build the local binary.
-ECHARTS_CONVERT_LOCAL_PATH=./bin/echarts-convert-local python -m main
+# Run in development mode with local binary, use bun run build:dev to build the local binary.
+ECHARTS_CONVERT_LOCAL_PATH=./executables/echarts-convert-local python -m main
 
 # More info in GUIDE.md
 ```
@@ -76,36 +79,4 @@ ECHARTS_CONVERT_LOCAL_PATH=./bin/echarts-convert-local python -m main
 **Note:** For production deployment in Dify, the plugin requires **zero external dependencies**. All JavaScript runtime dependencies are bundled with the plugin, enabling complete offline operation without requiring any external API calls or internet connectivity.
 
 then add the plugin in Dify workflow and test it.
-
-## Usage Example
-
-```markdown
-# Example Chart
-
-```echarts
-{
-  "title": {
-    "text": "Sample Chart"
-  },
-  "xAxis": {
-    "type": "category",
-    "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  },
-  "yAxis": {
-    "type": "value"
-  },
-  "series": [{
-    "data": [120, 200, 150, 80, 70, 110, 130],
-    "type": "bar"
-  }]
-}
-```
-
-some text ...
-
-```
----
-
-The plugin will automatically extract the ECharts configuration and convert it to the specified image format.
-
 

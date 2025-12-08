@@ -9,10 +9,10 @@
     "test:coverage": "bun test --coverage",
     "test:watch": "bun test --watch",
     "type-check": "tsc --noEmit",
-    "build:dev": "bun build ./index.ts --compile --outfile ../bin/echarts-convert-local",
-    "build:dev-win": "bun build ./index.ts --compile --target=bun-windows-x64 --outfile ../bin/echarts-convert-local.exe",
-    "build:prod:x64": "bun build ./index.ts --compile --target=bun-linux-x64 --outfile ../bin/echarts-convert-linux-x64",
-    "build:prod:arm64": "bun build ./index.ts --compile --target=bun-linux-arm64 --outfile ../bin/echarts-convert-linux-arm64"
+    "build:dev": "bun build ./index.ts ./worker.ts --compile --outfile ../executables/echarts-convert-local",
+    "build:dev-win": "bun build ./index.ts ./worker.ts --compile --target=bun-windows-x64 --outfile ../executables/echarts-convert-local.exe",
+    "build:prod:x64": "bun build ./index.ts ./worker.ts --compile --target=bun-linux-x64 --outfile ../executables/echarts-convert-linux-x64",
+    "build:prod:arm64": "bun build ./index.ts ./worker.ts --compile --target=bun-linux-arm64 --outfile ../executables/echarts-convert-linux-arm64"
   },
   "devDependencies": {
     "@types/bun": "latest",

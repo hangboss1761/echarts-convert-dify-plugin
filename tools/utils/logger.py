@@ -21,10 +21,8 @@ def get_logger(name: str = None) -> logging.Logger:
 
     logger = logging.getLogger(name)
 
-    # Set log level based on environment
-    # Use DEBUG level for development, INFO for production
-    log_level = logging.DEBUG if os.environ.get('ECHARTS_CONVERT_DEBUG') else logging.INFO
-    logger.setLevel(log_level)
+    # Set log level to INFO for production
+    logger.setLevel(logging.INFO)
 
     # Avoid duplicate handlers
     if not logger.handlers:

@@ -7,10 +7,10 @@ identity:
     pt_BR: "Echarts Convert"
     ja_JP: "Echarts Convert"
   description:
-    en_US: "Conver echarts to img"
+    en_US: "Convert echarts to img"
     zh_Hans: "将Echarts图表转换为图片"
-    pt_BR: "Conver echarts to img"
-    ja_JP: "Conver echarts to img"
+    pt_BR: "Convert echarts to img"
+    ja_JP: "Convert echarts to img"
   icon: "icon.svg"
 
 #########################################################################################

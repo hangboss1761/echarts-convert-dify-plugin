@@ -67,8 +67,8 @@ bun install
 # Executar em modo de desenvolvimento
 python -m main
 
-# Executar em modo de desenvolvimento com binário local, use pnpm build:dev para build o binário local.
-ECHARTS_CONVERT_LOCAL_PATH=./bin/echarts-convert-local python -m main
+# Executar em modo de desenvolvimento com binário local, use bun run build:dev para build o binário local.
+ECHARTS_CONVERT_LOCAL_PATH=./executables/echarts-convert-local python -m main
 
 # Mais informações em GUIDE.md
 ```

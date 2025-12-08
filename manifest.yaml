@@ -19,9 +19,6 @@ resource:
   permission:
     tool:
       enabled: true
-    storage:
-      enabled: true
-      size: 10485760
 plugins:
   tools:
     - provider/echarts-convert.yaml
@@ -29,7 +26,6 @@ meta:
   version: 0.0.1
   arch:
     - amd64
-    - arm64
   runner:
     language: python
     version: "3.12"

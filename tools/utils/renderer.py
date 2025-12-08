@@ -6,113 +6,129 @@ import platform
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 
+from dify_plugin.errors.model import InvokeError
 from .logger import get_logger
+from .binary_manager import BinaryManager
 
 logger = get_logger(__name__)
 
 @dataclass
 class RenderResult:
-    """Represents the result of chart rendering"""
+    """Represents the result of chart rendering."""
     success: bool
-    data: Optional[bytes] = None      # Image binary data
-    mime_type: Optional[str] = None   # image/svg+xml or image/png
-    error: Optional[str] = None       # Error message
-    index: Optional[int] = None       # Original chart index
+    data: Optional[bytes] = None
+    mime_type: Optional[str] = None
+    error: Optional[str] = None
+    index: Optional[int] = None
 
 
 class ChartRenderer:
-    """Chart renderer that uses js-executor for ECharts conversion"""
+    """Chart renderer that uses a native binary or a JavaScript runtime."""
 
-    def __init__(self, js_executor_path: str = None):
-        """
-        Initialize the chart renderer
+    def __init__(self, js_executor_path: str = None, force_binary: bool = True):
+        """Initializes the renderer by selecting the best available execution method."""
+        self.force_binary = force_binary
+        self.plugin_root = os.getcwd()
 
-        Args:
-            js_executor_path: Path to js-executor directory
-        """
-        if js_executor_path is None:
-            # Default path relative to this file
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            js_executor_path = os.path.join(
-                os.path.dirname(os.path.dirname(current_dir)),
-                'js-executor'
-            )
+        self.js_executor_path = js_executor_path or os.path.join(self.plugin_root, 'js-executor')
+        self.js_executor_script = os.path.join(self.js_executor_path, 'index.ts')
 
-        self.js_executor_path = js_executor_path
-        self.js_executor_script = os.path.join(js_executor_path, 'index.ts')
-        self.binary_path = self._get_binary_path()
+        # Initialize version-aware binary manager
+        self.binary_manager = BinaryManager(plugin_root=self.plugin_root)
 
-        # Log the final executor choice
-        if self.binary_path:
-            if os.environ.get('ECHARTS_CONVERT_LOCAL_PATH'):
-                logger.info(f"ChartRenderer initialized with custom ECHARTS_CONVERT_LOCAL_PATH")
-                logger.debug(f"Binary path: {self.binary_path}")
-            else:
-                logger.info(f"ChartRenderer initialized with binary")
-                logger.debug(f"Binary path: {self.binary_path}")
-        else:
-            logger.info(f"ChartRenderer initialized with Bun runtime")
-            logger.debug(f"Script path: {self.js_executor_script}")
+        self.system_info = self._get_system_info()
+        self.binary_path = self._select_executor()
+        self.system_info['executor_type'] = 'binary' if self.binary_path else 'runtime'
 
-    def _get_binary_path(self) -> Optional[str]:
-        """
-        Get the path to the compiled binary for the current platform
-        1. Check for local debugging executable (ECHARTS_CONVERT_LOCAL_PATH or echarts-convert-local)
-        2. Check for production Linux binary (packaged in plugin)
-        3. Fall back to Bun runtime
+        if self.force_binary:
+            self._validate_executor_selection()
 
-        Returns:
-            Path to binary executable or None if not found
-        """
-        # 1. Check for local debugging executable first
-        local_binary_path = os.environ.get('ECHARTS_CONVERT_LOCAL_PATH')
-        if local_binary_path:
-            logger.debug(f"ECHARTS_CONVERT_LOCAL_PATH detected: {local_binary_path}")
-            if os.path.isfile(local_binary_path) and os.access(local_binary_path, os.X_OK):
-                logger.info(f"Using local debugging executable from ECHARTS_CONVERT_LOCAL_PATH")
-                return local_binary_path
-            else:
-                logger.error(f"Local executable from ECHARTS_CONVERT_LOCAL_PATH not found or not executable")
+        executor_name = os.path.basename(self.binary_path) if self.binary_path else "JavaScript runtime"
+        logger.info(f"Using executor: {executor_name}")
 
-        # Check default local executable name
-        plugin_root = os.path.dirname(os.path.dirname(self.js_executor_path))
-        default_local_binary = os.path.join(plugin_root, 'echarts-convert-local')
-        if os.path.isfile(default_local_binary) and os.access(default_local_binary, os.X_OK):
-            logger.info(f"Using default local debugging executable")
-            return default_local_binary
+    def _select_executor(self) -> Optional[str]:
+        """Sequentially tries to find the best available executor."""
+        # 1. Check for local debugging executable from environment variable
+        local_path_env = os.environ.get('ECHARTS_CONVERT_LOCAL_PATH')
+        if local_path_env and os.access(local_path_env, os.X_OK):
+            return local_path_env
 
-        # 2. Check for production Linux binary
-        system = platform.system().lower()
-        machine = platform.machine().lower()
+        # 2. Check for default local debugging executable
+        default_local_path = os.path.join(self.plugin_root, 'echarts-convert-local')
+        if os.path.isfile(default_local_path) and os.access(default_local_path, os.X_OK):
+            return default_local_path
 
-        # Normalize architecture names
-        arch_map = {
-            'x86_64': 'x64',
-            'amd64': 'x64',
-            'aarch64': 'arm64',
-            'arm64': 'arm64',
-            'armv7l': 'arm64',  # Treat ARM32 as ARM64 for binary selection
-        }
+        # 3. On Linux, try to find and decompress the production binary
+        if self.system_info['platform'] == 'linux':
+            try:
+                bin_dir = os.path.join(self.plugin_root, 'executables')
+                BinaryManager.ensure_binaries_available(bin_dir, force_binary=self.force_binary)
+                arch = self.system_info['normalized_arch']
+                return self.binary_manager.get_binary_path(bin_dir, arch, self.plugin_root)
+            except InvokeError as e:
+                logger.warning(f"Binary deployment failed, falling back to runtime: {e}")
+                if self.force_binary:
+                    raise e
 
-        arch = arch_map.get(machine, machine)
-        bin_dir = os.path.join(plugin_root, 'bin')
-        binary_name = f'echarts-convert-linux-{arch}'
-        binary_path = os.path.join(bin_dir, binary_name)
-
-        if os.path.isfile(binary_path) and os.access(binary_path, os.X_OK):
-            logger.info(f"Using production Linux binary")
-            logger.debug(f"Binary: {os.path.basename(binary_path)} ({system}-{arch})")
-            return binary_path
-
-        # 3. No binary found - log appropriate message and return None
-        if system == 'linux':
-            logger.info(f"Falling back to Bun runtime (no production binary found)")
-            logger.debug("Platform: {system}-{arch}")
-        else:
-            logger.info(f"Falling back to Bun runtime (no binary available for {system}-{arch})")
-
+        # 4. Fallback to JavaScript runtime
         return None
 
+    def _validate_executor_selection(self):
+        """Ensures a valid executor is selected in production (force_binary=True) mode."""
+        if self.binary_path:
+            return
+
+        bin_dir = os.path.join(self.plugin_root, 'executables')
+        if not os.path.exists(bin_dir):
+            raise InvokeError(f"Binary directory not found: {bin_dir}")
+
+        expected_binary = self.system_info.get('expected_binary', 'echarts-convert-linux-...')
+        expected_path = os.path.join(bin_dir, f"{expected_binary}.gz")
+        if not os.path.exists(expected_path):
+            available = [f for f in os.listdir(bin_dir) if f.endswith('.gz')]
+            raise InvokeError(f"Expected binary '{expected_path}' not found. Available: {available}")
+        else:
+            raise InvokeError(f"Binary for platform {self.system_info['platform']}-{self.system_info['normalized_arch']} not found or not executable.")
+
+    def _build_command(self, width: int, height: int, concurrency: int, merge_options: Optional[Dict]) -> tuple[List[str], Optional[str]]:
+        """Builds the subprocess command and determines the working directory."""
+        if self.binary_path:
+            base_cmd, cwd = [self.binary_path], None
+        else:
+            base_cmd, cwd = ['bun', 'run', self.js_executor_script], self.js_executor_path
+
+        cmd = base_cmd + [
+            '--width', str(width),
+            '--height', str(height),
+            '--concurrency', str(concurrency)
+        ]
+        if merge_options:
+            cmd.extend(['--merge-options', json.dumps(merge_options, ensure_ascii=False)])
+
+        return cmd, cwd
+
+    def _parse_output(self, stdout: str) -> List[RenderResult]:
+        """Parses the JSON output from the executor into RenderResult objects."""
+        try:
+            output_data = json.loads(stdout)
+            results = output_data.get('results', [])
+            render_results = []
+
+            for i, item in enumerate(results):
+                if item.get('success'):
+                    data_url = item.get('data', '')
+                    if data_url.startswith('data:image/svg+xml;base64,'):
+                        base64_part = data_url.split(',', 1)[1]
+                        svg_data = base64.b64decode(base64_part)
+                        render_results.append(RenderResult(success=True, data=svg_data, mime_type='image/svg+xml', index=i))
+                    else:
+                        render_results.append(RenderResult(success=False, error="Invalid SVG output format", index=i))
+                else:
+                    render_results.append(RenderResult(success=False, error=item.get('error', 'Unknown error'), index=i))
+
+            return render_results
+        except json.JSONDecodeError as e:
+            raise InvokeError(f"ECharts output parsing failed: Invalid JSON response. Error: {e}")
 
     def render_charts(
         self,
@@ -122,144 +138,84 @@ class ChartRenderer:
         concurrency: int = 1,
         merge_options: Optional[Dict[str, Any]] = None
     ) -> List[RenderResult]:
-        """
-        Batch render ECharts configurations to SVG images
+        """Batch renders ECharts configurations to SVG images."""
+        # Security: Validate dimensions to prevent DoS attacks (defense in depth)
+        MIN_DIMENSION = 1
+        MAX_DIMENSION = 2000
 
-        Args:
-            configs: List of ECharts configuration dictionaries
-            width: Chart width in pixels
-            height: Chart height in pixels
-            concurrency: Number of charts to render concurrently (1-4, default 1)
-            merge_options: Global ECharts options to merge with each chart
+        if not isinstance(width, int) or width < MIN_DIMENSION or width > MAX_DIMENSION:
+            raise InvokeError(f"Width must be an integer between {MIN_DIMENSION} and {MAX_DIMENSION}, got {width}")
+        if not isinstance(height, int) or height < MIN_DIMENSION or height > MAX_DIMENSION:
+            raise InvokeError(f"Height must be an integer between {MIN_DIMENSION} and {MAX_DIMENSION}, got {height}")
 
-        Returns:
-            List of RenderResult objects
-        """
+        # Note: Concurrency validation is already done in tools/echarts-convert.py
+        # This method assumes concurrency is already in valid range (1-4)
+        cmd, cwd = self._build_command(width, height, concurrency, merge_options)
+        configs_json = json.dumps(configs, ensure_ascii=False)
+
+        # Security: Limit JSON input size to prevent DoS attacks
+        MAX_JSON_INPUT_SIZE = 50 * 1024 * 1024  # 50MB
+        json_size = len(configs_json.encode('utf-8'))
+        if json_size > MAX_JSON_INPUT_SIZE:
+            raise InvokeError(
+                f"Input JSON size ({json_size} bytes) exceeds maximum allowed size "
+                f"({MAX_JSON_INPUT_SIZE} bytes). Please reduce the number or complexity of charts."
+            )
+
+        logger.info(f"Rendering {len(configs)} chart(s)...")
+
         try:
-            # Validate and normalize parameters
-            if concurrency < 1 or concurrency > 4:
-                logger.warning(f"Concurrency {concurrency} out of range (1-4), using 1")
-                concurrency = 1
-
-            # Prepare input JSON
-            configs_json = json.dumps(configs, ensure_ascii=False)
-
-            # Determine execution method
-            if self.binary_path:
-                # Use compiled binary
-                cmd = [
-                    self.binary_path,
-                    '--width', str(width),
-                    '--height', str(height),
-                    '--concurrency', str(concurrency)
-                ]
-                if merge_options:
-                    cmd.extend(['--merge-options', json.dumps(merge_options, ensure_ascii=False)])
-
-                logger.info(f"Executing with compiled binary")
-                logger.debug(f"Binary: {self.binary_path}")
-                logger.debug(f"Command: {' '.join(cmd)}")
-                cwd = None  # Binary can run from any directory
-            else:
-                # Use Bun runtime
-                cmd = [
-                    'bun', 'run', self.js_executor_script,
-                    '--width', str(width),
-                    '--height', str(height),
-                    '--concurrency', str(concurrency)
-                ]
-                if merge_options:
-                    cmd.extend(['--merge-options', json.dumps(merge_options, ensure_ascii=False)])
-
-                logger.info(f"Executing with Bun runtime")
-                logger.debug(f"Script: {self.js_executor_script}")
-                logger.debug(f"Command: {' '.join(cmd)}")
-                cwd = self.js_executor_path
-
-            logger.info(f"Rendering {len(configs)} charts with {concurrency} concurrency")
-
-            # Execute rendering
             result = subprocess.run(
                 cmd,
                 input=configs_json,
                 text=True,
                 capture_output=True,
-                timeout=60,  # 60 second timeout
-                cwd=cwd
+                timeout=360,
+                cwd=cwd,
+                check=True  # Raises CalledProcessError on non-zero exit codes
             )
-
-            if result.returncode != 0:
-                execution_method = "compiled binary" if self.binary_path else "Bun runtime"
-                error_msg = f"Execution failed ({execution_method}): {result.stderr}"
-                logger.error(error_msg)
-                return [RenderResult(
-                    success=False,
-                    error=error_msg,
-                    index=i
-                ) for i in range(len(configs))]
-
-            # Parse output
-            try:
-                output_data = json.loads(result.stdout)
-                results = output_data.get('results', [])
-
-                # Convert to RenderResult objects (SVG only)
-                render_results = []
-                for i, result_item in enumerate(results):
-                    if result_item.get('success', False):
-                        data_url = result_item.get('data', '')
-                        if data_url.startswith('data:image/svg+xml;base64,'):
-                            # SVG data
-                            base64_part = data_url.split(',', 1)[1]
-                            svg_data = base64.b64decode(base64_part)
-                            render_results.append(RenderResult(
-                                success=True,
-                                data=svg_data,
-                                mime_type='image/svg+xml',
-                                index=i
-                            ))
-                        else:
-                            render_results.append(RenderResult(
-                                success=False,
-                                error="Invalid SVG output format",
-                                index=i
-                            ))
-                    else:
-                        render_results.append(RenderResult(
-                            success=False,
-                            error=result_item.get('error', 'Unknown error'),
-                            index=i
-                        ))
-
-                return render_results
-
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse js-executor output: {e}")
-                return [RenderResult(
-                    success=False,
-                    error=f"Output parsing failed: {str(e)}",
-                    index=i
-                ) for i in range(len(configs))]
-
+            return self._parse_output(result.stdout)
+        except subprocess.CalledProcessError as e:
+            error_msg = f"ECharts conversion failed ({self.system_info['executor_type']}): {e.stderr.strip()}"
+            raise InvokeError(error_msg)
+        except FileNotFoundError:
+            raise InvokeError(f"Executor command not found: '{cmd[0]}'. Please ensure it is installed and in the system's PATH.")
         except Exception as e:
-            logger.error(f"Unexpected error during rendering: {e}")
-            return [RenderResult(
-                success=False,
-                error=f"Rendering error: {str(e)}",
-                index=i
-            ) for i in range(len(configs))]
+            raise InvokeError(f"An unexpected error occurred during chart rendering: {e}")
 
+    def _get_system_info(self) -> Dict[str, Any]:
+        """Gets system information for debugging and responses."""
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+        arch_map = {'x86_64': 'x64', 'amd64': 'x64', 'aarch64': 'arm64', 'arm64': 'arm64'}
+        arch = arch_map.get(machine, machine)
+
+        try:
+            from .version_manager import get_plugin_version, get_versioned_binary_name
+            version = get_plugin_version(self.plugin_root)
+            expected_binary = get_versioned_binary_name(version, arch)
+        except Exception as e:
+            logger.warning(f"Failed to read plugin version: {e}")
+            expected_binary = f'echarts-convert-linux-{arch}'
+
+        return {
+            'platform': system,
+            'machine': machine,
+            'normalized_arch': arch,
+            'expected_binary': expected_binary,
+            'force_binary': self.force_binary,
+            'executor_type': 'unknown'
+        }
+
+    def get_system_info_for_json(self) -> Dict[str, Any]:
+        """Gets system information formatted for JSON responses."""
+        info = self.system_info.copy()
+        info['binary_available'] = bool(self.binary_path)
+        if self.binary_path:
+            info['binary_name'] = os.path.basename(self.binary_path)
+        return info
 
 def convert_base64_to_data_url(data: bytes, mime_type: str) -> str:
-    """
-    Convert binary data to base64 data URL
-
-    Args:
-        data: Binary image data
-        mime_type: MIME type (image/svg+xml or image/png)
-
-    Returns:
-        Data URL string
-    """
+    """Converts binary data to a base64 data URL."""
     base64_data = base64.b64encode(data).decode('ascii')
     return f"data:{mime_type};base64,{base64_data}"

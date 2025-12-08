@@ -33,13 +33,14 @@ export function renderChart(
   options: RenderOptions,
   index?: number
 ): RenderResult {
+  let chart: echarts.ECharts | null = null;
   try {
     if (!config) {
       throw new Error('Chart configuration is null or undefined.');
     }
 
     // Initialize chart with SVG renderer
-    const chart = echarts.init(null, null, {
+    chart = echarts.init(null, null, {
       renderer: 'svg',
       ssr: true,
       width: options.width,
@@ -54,7 +55,6 @@ export function renderChart(
 
     chart.setOption(finalConfig);
     const svgStr = chart.renderToSVGString();
-    chart.dispose();
 
     // Convert to base64
     const svgBuffer = Buffer.from(svgStr, 'utf8');
@@ -72,5 +72,10 @@ export function renderChart(
       error: (error as Error).message,
       index
     };
+  } finally {
+    // Ensure chart is always disposed to prevent resource leaks
+    if (chart) {
+      chart.dispose();
+    }
   }
 }

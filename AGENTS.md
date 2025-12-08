@@ -11,18 +11,28 @@ For ANY question about Dify (plugin development, API usage, configuration, troub
 
 This is a Dify plugin for converting ECharts visualizations to images. It's structured as a tool provider plugin that extends Dify's capabilities to generate chart images from ECharts configurations.
 
+## Documentation
+
+**Important**: For detailed system requirements and design documentation, please refer to:
+- **Product Requirements**: `docs/prd.md` - Complete product requirements and functional specifications
+- **Design Documentation**: `docs/design.md` - System architecture, module design, and design decisions
+
+**Documentation Maintenance**: When making code changes, ensure that `docs/prd.md` and `docs/design.md` are updated to reflect the current implementation. These documents should always match the actual code behavior.
+
 ## Architecture
 
 ### Plugin Structure
 - **Main Entry Point**: `main.py` - Simple plugin bootstrap using dify_plugin SDK
 - **Provider Layer**: `provider/echarts-convert.py` - Tool provider with credential validation
-- **Tool Implementation**: `tools/echarts-convert.py` - Actual chart conversion logic (currently stub implementation)
+- **Tool Implementation**: `tools/echarts-convert.py` - Chart conversion logic with full rendering support
 - **Configuration**: YAML files defining plugin metadata and tool parameters
 
 ### Key Components
 1. **manifest.yaml** - Plugin metadata, permissions, and resource requirements
 2. **Provider** (`provider/echarts-convert.py`) - Manages tool validation and authentication
 3. **Tool** (`tools/echarts-convert.py`) - Implements the chart conversion functionality
+4. **Utilities** (`tools/utils/`) - Supporting modules for parsing, rendering, binary management, and version management
+5. **JavaScript Executor** (`js-executor/`) - ECharts rendering engine with concurrent processing support
 
 ## Development Commands
 
@@ -47,62 +57,47 @@ The plugin can be tested by connecting to a Dify instance with remote debugging 
 
 ### Packaging and Publishing
 ```bash
-# Package plugin manually
-dify-plugin plugin package ./
+# Build and package plugin using build script (version automatically read from manifest.yaml)
+./build.sh
+
+# Include arm64 binary as well
+INCLUDE_ARM64=true ./build.sh
+
+# Build with specific version (overrides manifest.yaml)
+VERSION=1.0.0 ./build.sh
+
+# Clean build artifacts
+./build.sh clean
+
+# For CI/GitHub Actions
+./build.sh ci
 
 # Automated publishing via GitHub Actions (creates release PR)
 # Triggered automatically when creating a GitHub release
 ```
 
+**Version Management**:
+- Build scripts automatically read version from `manifest.yaml`
+- Versioned binary files are created: `echarts-convert-{version}-linux-{arch}`
+- Old versions are automatically cleaned to save storage space
+- If current version not found, uses latest available version
+
 ## Plugin Configuration
 
 ### Resource Allocation
 - Memory: 256MB (268435456 bytes)
-- Storage: 1MB for file operations
-- Architecture: amd64, arm64
+- Architecture: amd64, arm64 (Architecture support)
+- **Packaging**: Only Linux amd64 binary is included in the plugin package (.difypkg) due to the 50MB size limit
 - Python Runtime: 3.12
+
+**Note on Architecture Support**:
+- The plugin architecture supports both Linux amd64 and Linux arm64
+- However, only Linux amd64 binary is included in the production package to keep the .difypkg file under 50MB
+- For development/testing, you can build with `INCLUDE_ARM64=true` to include arm64 binary
 
 ### Permissions
 - Tool operations: Enabled
 - Storage access: Enabled (1MB limit)
-
-## Implementation Status
-
-**Current State**: Fully functional with advanced concurrency support
-- ✅ ECharts to SVG conversion implemented using JavaScript Node.js/Bun runtime
-- ✅ Real-time logging system for JavaScript execution process
-- ✅ Concurrent rendering with configurable worker threads (1-4)
-- ✅ Comprehensive performance testing and optimization
-- ✅ Error handling and validation for chart configurations
-- ✅ Support for batch processing multiple charts
-
-**Key Performance Insights**:
-- Concurrent rendering provides significant benefits (40-50% improvement) for heavy-duty charts
-- Sequential rendering remains optimal for simple charts
-- Worker overhead is minimal when processing complex charts with 1000+ data points
-
-**Architecture Components**:
-1. **JavaScript Runtime** (`js-executor/`) - ECharts rendering engine with Worker thread support
-   - `index.ts` - Main process coordination with detailed timing logs
-   - `render.ts` - Core chart rendering function with comprehensive logging
-   - `worker.ts` - Worker thread implementation for parallel processing
-   - `performance-test.js` - Performance testing utilities
-
-2. **Python Integration** (`tools/utils/renderer.py`) - Real-time log capture and process management
-   - Threading-based log streaming from JavaScript subprocess
-   - Comprehensive timing breakdown and error handling
-
-**Concurrency Performance Characteristics**:
-- **Heavy Charts** (1000+ data points): 40-50% performance improvement with 2-4 workers
-- **Simple Charts** (<100 data points): Sequential rendering recommended
-- **Optimal Use Cases**: Small batches (2-3 charts) of complex visualizations
-
-**Next Steps for Development**:
-1. Add support for additional image formats (PNG, JPEG) beyond SVG
-2. Implement adaptive concurrency that automatically chooses optimal worker count based on chart complexity
-3. Add chart complexity detection to provide user recommendations
-4. Implement caching for repeated chart configurations
-5. Consider adding GPU acceleration for extremely large datasets
 
 ## File Structure
 
@@ -117,12 +112,15 @@ dify-plugin plugin package ./
 │   ├── echarts-convert.py     # Tool implementation with full rendering logic
 │   ├── echarts-convert.yaml   # Tool parameter definition
 │   └── utils/
-│       └── renderer.py        # ECharts renderer with concurrent processing
+│       ├── parser.py          # Text parsing and code block extraction
+│       ├── renderer.py        # Chart renderer with executor management
+│       ├── binary_manager.py # Binary file decompression and caching
+│       ├── version_manager.py # Version management and binary selection
+│       └── logger.py          # Logging utilities
 ├── js-executor/               # JavaScript ECharts rendering engine
 │   ├── index.ts              # Main process coordination and CLI interface
 │   ├── render.ts             # Core ECharts rendering function
 │   ├── worker.ts             # Worker thread implementation
-│   ├── performance-test.js   # Heavy-duty chart performance testing
 │   ├── package.json          # Node.js/Bun dependencies
 │   ├── tsconfig.json         # TypeScript configuration
 │   └── test.json             # Sample chart configurations for testing

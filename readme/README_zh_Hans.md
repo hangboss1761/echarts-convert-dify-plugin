@@ -67,8 +67,8 @@ bun install
 # 以开发模式运行
 python -m main
 
-# 以开发模式运行，使用 pnpm build:dev 构建本地可执行文件。
-ECHARTS_CONVERT_LOCAL_PATH=./bin/echarts-convert-local python -m main
+# 以开发模式运行，使用 bun run build:dev 构建本地可执行文件。
+ECHARTS_CONVERT_LOCAL_PATH=./executables/echarts-convert-local python -m main
 
 # 更多信息请查看 GUIDE.md
 ```

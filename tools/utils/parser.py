@@ -62,31 +62,30 @@ def replace_blocks_with_images(
     image_urls: List[str]
 ) -> str:
     """
-    Replace echarts code blocks with markdown image syntax
+    Replace echarts code blocks with markdown image syntax.
 
     Args:
         content: Original text content
         blocks: List of EChartsBlock objects
-        image_urls: List of image URLs corresponding to each block
+        image_urls: List of image URLs corresponding to each block. 
+                    If a URL is None or the block has an error, it won't be replaced.
 
     Returns:
-        Modified text with echarts blocks replaced by images
+        Modified text with echarts blocks replaced by images.
     """
     if len(blocks) != len(image_urls):
         raise ValueError("Number of blocks and image URLs must match")
 
-    # Start from the end to avoid position changes
-    result = content
-    for block, image_url in zip(reversed(blocks), reversed(image_urls)):
-        if block.error or not image_url:
-            # Keep original block if there was an error
-            continue
-
-        # Generate markdown image syntax with index
-        block_index = len(blocks) - blocks.index(block)
-        image_markdown = f"![]({image_url})"
-
-        # Replace the block with image markdown
-        result = result[:block.start_pos] + image_markdown + result[block.end_pos:]
-
-    return result
+    parts = []
+    last_pos = 0
+    for block, image_url in zip(blocks, image_urls):
+        # Only replace if the block was processed successfully and has a valid image URL
+        if not block.error and image_url:
+            parts.append(content[last_pos:block.start_pos])
+            parts.append(f"![]({image_url})")
+            last_pos = block.end_pos
+    
+    # Add the remaining part of the content
+    parts.append(content[last_pos:])
+    
+    return "".join(parts)

@@ -67,8 +67,8 @@ bun install
 # 開発モードで実行
 python -m main
 
-# 開発モードでローカルバイナリを使用する場合、pnpm build:dev を使用してローカルバイナリをビルドしてください。
-ECHARTS_CONVERT_LOCAL_PATH=./bin/echarts-convert-local python -m main
+# 開発モードでローカルバイナリを使用する場合、bun run build:dev を使用してローカルバイナリをビルドしてください。
+ECHARTS_CONVERT_LOCAL_PATH=./executables/echarts-convert-local python -m main
 
 
 # 詳細は GUIDE.md を参照
