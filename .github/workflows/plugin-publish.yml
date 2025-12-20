@@ -10,17 +10,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-
-      - name: Build binaries
-        run: |
-          chmod +x build.sh
-          ./build.sh ci
-
       - name: Download CLI tool
         run: |
           mkdir -p $RUNNER_TEMP/bin
@@ -49,21 +38,21 @@ jobs:
           echo "Plugin author: $AUTHOR"
           echo "author=$AUTHOR" >> $GITHUB_OUTPUT
 
-      - name: Package Plugin
-        id: package
-        run: |
-          cd $GITHUB_WORKSPACE
-          PACKAGE_NAME="${{ steps.get_basic_info.outputs.plugin_name }}-${{ steps.get_basic_info.outputs.version }}.difypkg"
-          $RUNNER_TEMP/bin/dify-plugin-linux-amd64 plugin package . -o "$PACKAGE_NAME"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
 
+      - name: Build binaries and package
+        env:
+          DIFY_CLI_PATH: ${{ runner.temp }}/bin/dify-plugin-linux-amd64
+        run: |
+          chmod +x build.sh
+          ./build.sh ci
+
+          PACKAGE_NAME="${{ steps.get_basic_info.outputs.plugin_name }}-${{ steps.get_basic_info.outputs.version }}.difypkg"
           echo "Package result:"
           ls -la "$PACKAGE_NAME"
-          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
-
-          echo "\nFull file path:"
-          pwd
-          echo "\nDirectory structure:"
-          tree || ls -R
 
       - name: Checkout target repo
         uses: actions/checkout@v3

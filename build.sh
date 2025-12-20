@@ -86,6 +86,26 @@ read_version() {
     fi
 }
 
+# 读取插件元数据
+read_plugin_metadata() {
+    if [ -f "manifest.yaml" ]; then
+        PLUGIN_NAME=$(grep "^name:" manifest.yaml | awk '{print $2}')
+        PLUGIN_VERSION=$(grep "^version:" manifest.yaml | awk '{print $2}')
+        PLUGIN_AUTHOR=$(grep "^author:" manifest.yaml | awk '{print $2}')
+
+        echo "📋 插件信息:"
+        echo "  名称: $PLUGIN_NAME"
+        echo "  版本: $PLUGIN_VERSION"
+        echo "  作者: $PLUGIN_AUTHOR"
+
+        # 设置包名
+        PACKAGE_NAME="${PLUGIN_NAME}-${PLUGIN_VERSION}.difypkg"
+    else
+        echo -e "${RED}❌ 未找到 manifest.yaml 文件${NC}"
+        exit 1
+    fi
+}
+
 # 清理构建产物
 clean_artifacts() {
     echo "🧹 清理构建产物..."
@@ -251,26 +271,59 @@ verify_build() {
     return 0
 }
 
+
 # 打包插件
 package_plugin() {
-    if [ "$MODE" = "local" ]; then
-        echo "📦 创建插件包..."
+    echo "📦 创建插件包..."
+
+    if [ "$MODE" = "ci" ]; then
+        # CI 模式：使用环境变量中的 Dify CLI 路径
+        if [ -z "$DIFY_CLI_PATH" ] || [ ! -f "$DIFY_CLI_PATH" ]; then
+            echo -e "${RED}❌ CI 模式需要设置 DIFY_CLI_PATH 环境变量指向 Dify CLI 工具${NC}"
+            exit 1
+        fi
+
+        # 使用官方 CLI 打包
+        "$DIFY_CLI_PATH" plugin package . -o "$PACKAGE_NAME"
+        if [ $? -eq 0 ]; then
+            echo "✅ 包已创建: $PACKAGE_NAME"
+
+            # 验证包文件
+            if [ -f "$PACKAGE_NAME" ]; then
+                pkg_size=$(stat -f%z "$PACKAGE_NAME" 2>/dev/null || stat -c%s "$PACKAGE_NAME" 2>/dev/null || echo 0)
+                size_fmt=$(numfmt --to=iec $pkg_size 2>/dev/null || echo ${pkg_size}B)
+                echo "  📊 包大小: $size_fmt"
+
+                if [ "$pkg_size" -gt 52428800 ]; then
+                    echo -e "${RED}  ❌ 插件包超过 50MB 限制${NC}"
+                    exit 1
+                fi
+            else
+                echo -e "${RED}❌ 包文件未找到${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${RED}❌ 插件包创建失败${NC}"
+            exit 1
+        fi
+
+    elif [ "$MODE" = "local" ]; then
+        # 本地模式：使用本地 dify 命令（可选）
         if command -v dify &> /dev/null; then
             dify plugin package ./ -o echarts-convert.difypkg
             if [ $? -eq 0 ]; then
-                echo "✅ 包已创建: echarts-convert.difypkg"
+                echo "✅ 本地包已创建: echarts-convert.difypkg"
 
-                # 检查包大小
                 pkg_size=$(stat -f%z "echarts-convert.difypkg" 2>/dev/null || stat -c%s "echarts-convert.difypkg" 2>/dev/null || echo 0)
                 if [ "$pkg_size" -gt 52428800 ]; then
                     echo -e "${YELLOW}  ⚠️  警告: 插件包超过 50MB，可能无法上传到 Dify${NC}"
                 fi
             else
-                echo -e "${RED}❌ 插件包创建失败${NC}"
+                echo -e "${RED}❌ 本地插件包创建失败${NC}"
                 return 1
             fi
         else
-            echo -e "${YELLOW}⚠️  dify CLI 未找到，无法创建包${NC}"
+            echo -e "${YELLOW}⚠️  dify CLI 未找到，跳过插件包创建${NC}"
             echo "   要创建包，请安装 dify CLI:"
             echo "   https://github.com/langgenius/dify-plugin-daemon"
         fi
@@ -299,6 +352,12 @@ show_summary() {
         echo "  - echarts-convert.difypkg ($pkg_size_fmt)"
         echo ""
         echo "🚀 准备部署！将 echarts-convert.difypkg 上传到 Dify。"
+    elif [ "$MODE" = "ci" ] && [ -n "$PACKAGE_NAME" ] && [ -f "$PACKAGE_NAME" ]; then
+        pkg_size=$(stat -f%z "$PACKAGE_NAME" 2>/dev/null || stat -c%s "$PACKAGE_NAME" 2>/dev/null || echo 0)
+        pkg_size_fmt=$(numfmt --to=iec $pkg_size 2>/dev/null || echo ${pkg_size}B)
+        echo "  - $PACKAGE_NAME ($pkg_size_fmt)"
+        echo ""
+        echo "🚀 CI 包已准备就绪！"
     fi
 
     # 显示注意事项
@@ -355,6 +414,11 @@ main() {
     # 执行构建步骤
     build_js_binaries
     compress_binaries
+
+    # CI 模式额外步骤
+    if [ "$MODE" = "ci" ]; then
+        read_plugin_metadata
+    fi
 
     # 验证构建结果
     if verify_build; then
