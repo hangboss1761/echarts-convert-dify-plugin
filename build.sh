@@ -278,10 +278,23 @@ package_plugin() {
 
     if [ "$MODE" = "ci" ]; then
         # CI 模式：使用环境变量中的 Dify CLI 路径
-        if [ -z "$DIFY_CLI_PATH" ] || [ ! -f "$DIFY_CLI_PATH" ]; then
+        echo "🔍 检查 DIFY_CLI_PATH 环境变量..."
+        echo "  DIFY_CLI_PATH: ${DIFY_CLI_PATH:-未设置}"
+
+        if [ -z "$DIFY_CLI_PATH" ]; then
             echo -e "${RED}❌ CI 模式需要设置 DIFY_CLI_PATH 环境变量指向 Dify CLI 工具${NC}"
             exit 1
         fi
+
+        if [ ! -f "$DIFY_CLI_PATH" ]; then
+            echo -e "${RED}❌ Dify CLI 工具文件不存在: $DIFY_CLI_PATH${NC}"
+            echo "当前工作目录: $(pwd)"
+            echo "尝试查找文件..."
+            ls -la "$(dirname "$DIFY_CLI_PATH")" 2>/dev/null || echo "目录不存在"
+            exit 1
+        fi
+
+        echo "✅ Dify CLI 工具已找到: $DIFY_CLI_PATH"
 
         # 使用官方 CLI 打包
         "$DIFY_CLI_PATH" plugin package . -o "$PACKAGE_NAME"

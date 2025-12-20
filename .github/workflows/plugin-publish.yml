@@ -1,6 +1,13 @@
 name: Plugin Publish Workflow
 
 on:
+  # Manual trigger for debugging
+  # workflow_dispatch:
+  # Trigger on push to dev branch for debugging
+  # push:
+  #   branches:
+  #     - dev
+  # Trigger on release publish
   release:
     types: [published]
 
